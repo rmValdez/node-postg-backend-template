@@ -12,6 +12,10 @@ export const ACCESS_TOKEN_EXPIRY =
   process.env.ACCESS_TOKEN_EXPIRY || process.env.JWT_EXPIRY || '1d';
 export const REFRESH_TOKEN_EXPIRY = process.env.REFRESH_TOKEN_EXPIRY || '7d';
 
+export const COOKIE_SECRET =
+  process.env.COOKIE_SECRET || process.env.JWT_SECRET || 'cookie-secret-key-123';
+export const COOKIE_DOMAIN = process.env.COOKIE_DOMAIN || undefined;
+
 export const DATABASE_URL = process.env.DATABASE_URL;
 
 // Redis

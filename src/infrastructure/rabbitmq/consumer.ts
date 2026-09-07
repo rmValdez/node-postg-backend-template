@@ -54,7 +54,7 @@ export const consume = async <T>(
   await channel.consume(queueName, async (msg: ConsumeMessage | null) => {
     if (!msg) return;
 
-    let parsedEvent: DomainEventMessage<T> | null = null;
+    let parsedEvent: DomainEventMessage<T>;
 
     try {
       parsedEvent = JSON.parse(msg.content.toString()) as DomainEventMessage<T>;

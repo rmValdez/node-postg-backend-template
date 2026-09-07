@@ -4,7 +4,7 @@ import tseslint from 'typescript-eslint';
 export default tseslint.config(
   // Global ignores
   {
-    ignores: ['dist/**', 'node_modules/**', 'coverage/**'],
+    ignores: ['dist/**', 'node_modules/**', 'coverage/**', 'tools/**'],
   },
 
   // Base JS recommended
@@ -25,6 +25,7 @@ export default tseslint.config(
       '@typescript-eslint/no-namespace': 'off',
       'no-console': ['warn', { allow: ['error', 'warn', 'info', 'log'] }],
       'no-return-await': 'off',
+      'no-useless-escape': 'off',
     },
   },
 

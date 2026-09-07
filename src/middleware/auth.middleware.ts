@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import AuthRepo from '../repositories/auth.repository';
 import { ACCESS_TOKEN_SECRET } from '../config';
+import { COOKIE_NAMES } from '../constants/cookie.constant';
 
 declare global {
   namespace Express {
@@ -12,7 +13,16 @@ declare global {
 }
 
 export const authenticate = async (req: Request, res: Response, next: NextFunction) => {
-  const token = req.headers.authorization?.split(' ')[1];
+  const cookieToken =
+    req.cookies?.[COOKIE_NAMES.ACCESS_TOKEN] ||
+    req.cookies?.access_token ||
+    req.signedCookies?.[COOKIE_NAMES.ACCESS_TOKEN] ||
+    req.signedCookies?.access_token;
+  const headerToken = req.headers.authorization?.startsWith('Bearer ')
+    ? req.headers.authorization.slice(7).trim()
+    : req.headers.authorization?.split(' ')[1];
+
+  const token = cookieToken || headerToken;
 
   if (!token) {
     return res.status(401).json({ message: 'No token provided' });
@@ -28,7 +38,7 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
     }
     req.user = user;
     next();
-  } catch (error: any) {
+  } catch (_error: any) {
     return res.status(401).json({ message: 'Invalid token' });
   }
 };

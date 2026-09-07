@@ -1,8 +1,9 @@
 import express from 'express';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
 import router from './routes';
-import { isDev } from './config';
+import { isDev, COOKIE_SECRET } from './config';
 import setup from './setup';
 import { corsMiddleware } from './middleware/cors.middleware';
 import { tenantMiddleware } from './middleware/tenant.middleware';
@@ -15,6 +16,7 @@ app.set('trust proxy', 1);
 
 app.use(corsMiddleware);
 app.options('*', corsMiddleware);
+app.use(cookieParser(COOKIE_SECRET));
 app.use(tenantMiddleware);
 
 app.use(express.json());

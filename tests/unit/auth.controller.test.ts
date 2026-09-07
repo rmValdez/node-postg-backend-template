@@ -1,5 +1,6 @@
 import request from 'supertest';
 import express, { Express } from 'express';
+import cookieParser from 'cookie-parser';
 import AuthController from '../../src/controllers/auth.controller';
 import AuthService from '../../src/services/auth.service';
 
@@ -11,6 +12,7 @@ describe('AuthController', () => {
 
   beforeAll(() => {
     app = express();
+    app.use(cookieParser());
     app.use(express.json());
 
     // Create routes for testing
@@ -66,6 +68,13 @@ describe('AuthController', () => {
       expect(response.body.message).toBe('User created successfully');
       expect(response.body.data.accessToken).toBeDefined();
       expect(response.body.data.user.email).toBe(registerData.email);
+
+      // Verify cookies are set
+      const rawCookies = response.headers['set-cookie'];
+      expect(rawCookies).toBeDefined();
+      const cookies = (Array.isArray(rawCookies) ? rawCookies : [rawCookies]) as string[];
+      expect(cookies.some((c: string) => c.startsWith('accessToken='))).toBe(true);
+      expect(cookies.some((c: string) => c.startsWith('refreshToken='))).toBe(true);
     });
 
     it('should return 400 for invalid email', async () => {
@@ -111,7 +120,7 @@ describe('AuthController', () => {
   });
 
   describe('POST /auth/login', () => {
-    it('should login user successfully', async () => {
+    it('should login user successfully and set auth cookies', async () => {
       const loginData = {
         email: 'test@example.com',
         password: 'SecurePass123',
@@ -135,6 +144,12 @@ describe('AuthController', () => {
       expect(response.status).toBe(200);
       expect(response.body.message).toBe('Login successful');
       expect(response.body.data.accessToken).toBeDefined();
+
+      const rawCookies = response.headers['set-cookie'];
+      expect(rawCookies).toBeDefined();
+      const cookies = (Array.isArray(rawCookies) ? rawCookies : [rawCookies]) as string[];
+      expect(cookies.some((c: string) => c.startsWith('accessToken='))).toBe(true);
+      expect(cookies.some((c: string) => c.startsWith('refreshToken='))).toBe(true);
     });
 
     it('should return 401 for invalid credentials', async () => {
@@ -153,7 +168,7 @@ describe('AuthController', () => {
   });
 
   describe('POST /auth/refresh-token', () => {
-    it('should refresh token successfully', async () => {
+    it('should refresh token successfully from request body', async () => {
       (AuthService.refreshToken as jest.Mock).mockResolvedValue({
         accessToken: 'new-access-token',
         user: {
@@ -173,6 +188,38 @@ describe('AuthController', () => {
       expect(response.status).toBe(200);
       expect(response.body.message).toBe('Token refreshed successfully');
       expect(response.body.data.accessToken).toBeDefined();
+
+      const rawCookies = response.headers['set-cookie'];
+      expect(rawCookies).toBeDefined();
+      const cookies = (Array.isArray(rawCookies) ? rawCookies : [rawCookies]) as string[];
+      expect(cookies.some((c: string) => c.startsWith('accessToken='))).toBe(true);
+    });
+
+    it('should refresh token successfully from cookie when body is empty', async () => {
+      (AuthService.refreshToken as jest.Mock).mockResolvedValue({
+        accessToken: 'cookie-refreshed-access-token',
+        user: {
+          id: '123',
+          email: 'test@example.com',
+          username: 'testuser',
+          name: 'Test User',
+          role: 'USER',
+          onboardingCompleted: false,
+        },
+      });
+
+      const response = await request(app)
+        .post('/auth/refresh-token')
+        .set('Cookie', ['refreshToken=valid-cookie-refresh-token']);
+
+      expect(response.status).toBe(200);
+      expect(response.body.message).toBe('Token refreshed successfully');
+      expect(response.body.data.accessToken).toBe('cookie-refreshed-access-token');
+
+      const rawCookies = response.headers['set-cookie'];
+      expect(rawCookies).toBeDefined();
+      const cookies = (Array.isArray(rawCookies) ? rawCookies : [rawCookies]) as string[];
+      expect(cookies.some((c: string) => c.startsWith('accessToken='))).toBe(true);
     });
 
     it('should return 401 for invalid refresh token', async () => {
@@ -190,17 +237,25 @@ describe('AuthController', () => {
   });
 
   describe('POST /auth/logout', () => {
-    it('should logout user successfully', async () => {
+    it('should logout user successfully and clear cookies', async () => {
       (AuthService.logout as jest.Mock).mockResolvedValue({
         message: 'Logged out successfully',
       });
 
       const response = await request(app)
         .post('/auth/logout')
-        .send({ refreshToken: 'token-to-invalidate' });
+        .set('Cookie', ['refreshToken=cookie-token'])
+        .send();
 
       expect(response.status).toBe(200);
       expect(response.body.message).toBe('Logged out successfully');
+
+      const rawCookies = response.headers['set-cookie'];
+      expect(rawCookies).toBeDefined();
+      const cookies = (Array.isArray(rawCookies) ? rawCookies : [rawCookies]) as string[];
+      // Clearing cookies sets Max-Age=0 or empty/expired date
+      expect(cookies.some((c: string) => c.startsWith('accessToken=;') || c.includes('Max-Age=0'))).toBe(true);
+      expect(cookies.some((c: string) => c.startsWith('refreshToken=;') || c.includes('Max-Age=0'))).toBe(true);
     });
 
     it('should return 401 when user is not authenticated', async () => {

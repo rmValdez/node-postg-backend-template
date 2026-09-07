@@ -99,7 +99,7 @@ export default class AuthSvc {
           permissions: getPermissionsForRole(user.role),
         },
       };
-    } catch (error) {
+    } catch (_error) {
       throw { status: 401, message: 'Invalid refresh token' };
     }
   }

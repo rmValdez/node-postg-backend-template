@@ -3,7 +3,7 @@ import { API_KEYS } from '../config';
 import { responseError } from '../helpers/response.helper';
 
 declare global {
-  // eslint-disable-next-line @typescript-eslint/no-namespace
+   
   namespace Express {
     interface Request {
       /** Name of the calling service, resolved from its X-API-Key. */

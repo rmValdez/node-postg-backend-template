@@ -58,7 +58,7 @@ export async function verifyMailer(): Promise<boolean> {
       `[Mailer] Transport verified: ${MAILER_EMAIL} via ${MAILER_TRANSPORT_HOST}:${MAILER_TRANSPORT_PORT}`,
     );
     return true;
-  } catch (error) {
+  } catch (_error) {
     logger.warn(
       `[Mailer] Transport check warning for ${MAILER_TRANSPORT_HOST}:${MAILER_TRANSPORT_PORT} — emails will not be delivered.`,
     );
